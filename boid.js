@@ -86,10 +86,10 @@ function setMagnitude(magnitude, vector) {
     };
 }
 
-function drawSphere(vector, radius) {
+function drawSphere(vector, radius, subdivisionsX = 3, subdivisionsY = 3) {
     push();
     translate(vector.x, vector.y, vector.z);
-    sphere(radius);
+    sphere(radius, subdivisionsX, subdivisionsY);
     pop();
 }
 
@@ -140,11 +140,14 @@ class Boid {
         this.pointing = addition(this.position, this.pointing);
     }
 
-    draw() {
-        stroke(255);
-        drawSphere(this.position, 3);
-        strokeWeight(3);
-        line(this.position.x, this.position.y, this.position.z, this.pointing.x, this.pointing.y, this.pointing.z);
+    draw(fastMode) {
+        if (fastMode) {
+            point(this.position.x, this.position.y, this.position.z);
+        }
+        else {
+            drawSphere(this.position, 2);
+            line(this.position.x, this.position.y, this.position.z, this.pointing.x, this.pointing.y, this.pointing.z);
+        }
     }
 
     /**
@@ -211,8 +214,16 @@ class Boid {
         }
     }
 
-    flocking(boids, alignmentProportion = 1, cohesionProportion = 1, separationProportion = 1) {
+    alignment(octree, alignmentProportion = 1) {
         let alignmentPerceptionRadius = 35;
+
+        const alignmentTopLeftFront = create3dVector(this.position.x - alignmentPerceptionRadius,
+                    this.position.y - alignmentPerceptionRadius,
+                    this.position.z - alignmentPerceptionRadius);
+        const alignmentBottomRightBack = create3dVector(this.position.x + alignmentPerceptionRadius,
+                    this.position.y + alignmentPerceptionRadius,
+                    this.position.z + alignmentPerceptionRadius);
+
         alignmentPerceptionRadius *= alignmentPerceptionRadius;
         let alignmentSteering = {
             x: 0,
@@ -220,47 +231,15 @@ class Boid {
             z: 0
         };
         let alignmentTotal = 0;
+        let alignmentBoids = octree.getVectors(alignmentTopLeftFront, alignmentBottomRightBack);
 
-        let cohesionPerceptionRadius = 50;
-        cohesionPerceptionRadius *= cohesionPerceptionRadius;
-        let cohesionSteering = {
-            x: 0,
-            y: 0,
-            z: 0
-        };
-        let cohesionTotal = 0;
-
-        let separationPerceptionRadius = 25;
-        separationPerceptionRadius *= separationPerceptionRadius;
-        let separationSteering = {
-            x: 0,
-            y: 0,
-            z: 0
-        };
-        let separationTotal = 0;
-
-        for (let i = 0; i < boids.length; i++) {
-            const other = boids[i];
+        for (let i = 0; i < alignmentBoids.length; i++) {
+            const other = alignmentBoids[i];
             const d = distanceFast(this.position.x - other.position.x, this.position.y - other.position.y, this.position.z - other.position.z);
 
-            if (other !== this) {
-                if (d < alignmentPerceptionRadius) {
-                    alignmentSteering = addition(alignmentSteering, other.velocity);
-                    alignmentTotal++;
-                }
-
-                if (d < cohesionPerceptionRadius) {
-                    cohesionSteering = addition(cohesionSteering, other.position);
-                    cohesionTotal++;
-                }
-
-                if (d < separationPerceptionRadius && d > 0) {
-                    let difference = subtraction(this.position, other.position);
-                    difference = division(d, difference);
-                    separationSteering = addition(separationSteering, difference);
-
-                    separationTotal++;
-                }
+            if (d < alignmentPerceptionRadius) {
+                alignmentSteering = addition(alignmentSteering, other.velocity);
+                alignmentTotal++;
             }
         }
 
@@ -272,6 +251,36 @@ class Boid {
             alignmentSteering = multiplication(alignmentProportion, alignmentSteering);
             this.acceleration = addition(this.acceleration, alignmentSteering);
         }
+    }
+
+    cohesion(octree, cohesionProportion = 1) {
+        let cohesionPerceptionRadius = 50;
+
+        const cohesionTopLeftFront = create3dVector(this.position.x - cohesionPerceptionRadius,
+                    this.position.y - cohesionPerceptionRadius,
+                    this.position.z - cohesionPerceptionRadius);
+        const cohesionBottomRightBack = create3dVector(this.position.x + cohesionPerceptionRadius,
+                    this.position.y + cohesionPerceptionRadius,
+                    this.position.z + cohesionPerceptionRadius);
+
+        cohesionPerceptionRadius *= cohesionPerceptionRadius;
+        let cohesionSteering = {
+            x: 0,
+            y: 0,
+            z: 0
+        };
+        let cohesionTotal = 0;
+        let cohesionBoids = octree.getVectors(cohesionTopLeftFront, cohesionBottomRightBack);
+
+        for (let i = 0; i < cohesionBoids.length; i++) {
+            const other = cohesionBoids[i];
+            const d = distanceFast(this.position.x - other.position.x, this.position.y - other.position.y, this.position.z - other.position.z);
+
+            if (d < cohesionPerceptionRadius) {
+                cohesionSteering = addition(cohesionSteering, other.position);
+                cohesionTotal++;
+            }
+        }
 
         if (cohesionTotal > 0) {
             cohesionSteering = division(cohesionTotal, cohesionSteering);
@@ -282,6 +291,39 @@ class Boid {
             cohesionSteering = multiplication(cohesionProportion, cohesionSteering);
             this.acceleration = addition(this.acceleration, cohesionSteering);
         }
+    }
+
+    separation(octree, separationProportion = 1) {
+        let separationPerceptionRadius = 25;
+
+        const separationTopLeftFront = create3dVector(this.position.x - separationPerceptionRadius,
+                    this.position.y - separationPerceptionRadius,
+                    this.position.z - separationPerceptionRadius);
+        const separationBottomRightBack = create3dVector(this.position.x + separationPerceptionRadius,
+                        this.position.y + separationPerceptionRadius,
+                        this.position.z + separationPerceptionRadius);
+
+        separationPerceptionRadius *= separationPerceptionRadius;
+        let separationSteering = {
+            x: 0,
+            y: 0,
+            z: 0
+        };
+        let separationTotal = 0;
+        let separationBoids = octree.getVectors(separationTopLeftFront, separationBottomRightBack);
+
+        for (let i = 0; i < separationBoids.length; i++) {
+            const other = separationBoids[i];
+            const d = distanceFast(this.position.x - other.position.x, this.position.y - other.position.y, this.position.z - other.position.z);
+
+            if (d < separationPerceptionRadius && d > 0) {
+                let difference = subtraction(this.position, other.position);
+                difference = division(d, difference);
+                separationSteering = addition(separationSteering, difference);
+
+                separationTotal++;
+            }
+        }
 
         if (separationTotal > 0) {
             separationSteering = division(separationTotal, separationSteering);
@@ -290,6 +332,122 @@ class Boid {
             separationSteering = limitMaxMagnitude(this.maxForce, separationSteering);
             separationSteering = multiplication(separationProportion, separationSteering);
             this.acceleration = addition(this.acceleration, separationSteering);
+        }
+    }
+
+    flocking(octree, alignmentProportion = 1, cohesionProportion = 1, separationProportion = 1, fastMode = false) {
+        if (fastMode) {
+            let alignmentPerceptionRadius = 35;
+
+            // const alignmentTopLeftFront = create3dVector(this.position.x - alignmentPerceptionRadius,
+            //             this.position.y - alignmentPerceptionRadius,
+            //             this.position.z - alignmentPerceptionRadius);
+            // const alignmentBottomRightBack = create3dVector(this.position.x + alignmentPerceptionRadius,
+            //             this.position.y + alignmentPerceptionRadius,
+            //             this.position.z + alignmentPerceptionRadius);
+
+            alignmentPerceptionRadius *= alignmentPerceptionRadius;
+            let alignmentSteering = {
+                x: 0,
+                y: 0,
+                z: 0
+            };
+            let alignmentTotal = 0;
+            // let alignmentBoids = octree.getVectors(alignmentTopLeftFront, alignmentBottomRightBack);
+
+            let cohesionPerceptionRadius = 50;
+
+            const cohesionTopLeftFront = create3dVector(this.position.x - cohesionPerceptionRadius,
+                        this.position.y - cohesionPerceptionRadius,
+                        this.position.z - cohesionPerceptionRadius);
+            const cohesionBottomRightBack = create3dVector(this.position.x + cohesionPerceptionRadius,
+                        this.position.y + cohesionPerceptionRadius,
+                        this.position.z + cohesionPerceptionRadius);
+
+            cohesionPerceptionRadius *= cohesionPerceptionRadius;
+            let cohesionSteering = {
+                x: 0,
+                y: 0,
+                z: 0
+            };
+            let cohesionTotal = 0;
+            let cohesionBoids = octree.getVectors(cohesionTopLeftFront, cohesionBottomRightBack);
+
+            let separationPerceptionRadius = 25;
+
+            // const separationTopLeftFront = create3dVector(this.position.x - separationPerceptionRadius,
+            //             this.position.y - separationPerceptionRadius,
+            //             this.position.z - separationPerceptionRadius);
+            // const separationBottomRightBack = create3dVector(this.position.x + separationPerceptionRadius,
+            //                 this.position.y + separationPerceptionRadius,
+            //                 this.position.z + separationPerceptionRadius);
+
+            separationPerceptionRadius *= separationPerceptionRadius;
+            let separationSteering = {
+                x: 0,
+                y: 0,
+                z: 0
+            };
+            let separationTotal = 0;
+            // let separationBoids = octree.getVectors(separationTopLeftFront, separationBottomRightBack);
+
+            for (let i = 0; i < cohesionBoids.length; i++) {
+                const other = cohesionBoids[i];
+                const d = distanceFast(this.position.x - other.position.x, this.position.y - other.position.y, this.position.z - other.position.z);
+
+                if (other !== this) {
+                    if (d < alignmentPerceptionRadius) {
+                        alignmentSteering = addition(alignmentSteering, other.velocity);
+                        alignmentTotal++;
+                    }
+
+                    if (d < cohesionPerceptionRadius) {
+                        cohesionSteering = addition(cohesionSteering, other.position);
+                        cohesionTotal++;
+                    }
+
+                    if (d < separationPerceptionRadius && d > 0) {
+                        let difference = subtraction(this.position, other.position);
+                        difference = division(d, difference);
+                        separationSteering = addition(separationSteering, difference);
+
+                        separationTotal++;
+                    }
+                }
+            }
+
+            if (alignmentTotal > 0) {
+                alignmentSteering = division(alignmentTotal, alignmentSteering);
+                alignmentSteering = setMagnitude(this.maxVelocity, alignmentSteering);
+                alignmentSteering = subtraction(alignmentSteering, this.velocity);
+                alignmentSteering = limitMaxMagnitude(this.maxForce, alignmentSteering);
+                alignmentSteering = multiplication(alignmentProportion, alignmentSteering);
+                this.acceleration = addition(this.acceleration, alignmentSteering);
+            }
+
+            if (cohesionTotal > 0) {
+                cohesionSteering = division(cohesionTotal, cohesionSteering);
+                cohesionSteering = subtraction(cohesionSteering, this.position);
+                cohesionSteering = setMagnitude(this.maxVelocity, cohesionSteering);
+                cohesionSteering = subtraction(cohesionSteering, this.velocity);
+                cohesionSteering = limitMaxMagnitude(this.maxForce, cohesionSteering);
+                cohesionSteering = multiplication(cohesionProportion, cohesionSteering);
+                this.acceleration = addition(this.acceleration, cohesionSteering);
+            }
+
+            if (separationTotal > 0) {
+                separationSteering = division(separationTotal, separationSteering);
+                separationSteering = setMagnitude(this.maxVelocity, separationSteering);
+                separationSteering = subtraction(separationSteering, this.velocity);
+                separationSteering = limitMaxMagnitude(this.maxForce, separationSteering);
+                separationSteering = multiplication(separationProportion, separationSteering);
+                this.acceleration = addition(this.acceleration, separationSteering);
+            }
+        }
+        else {
+            this.alignment(octree, alignmentProportion);
+            this.cohesion(octree, cohesionProportion);
+            this.separation(octree, separationProportion);
         }
     }
 }

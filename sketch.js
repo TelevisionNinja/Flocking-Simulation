@@ -1,4 +1,5 @@
 let flock = [];
+const flockSize = 512;
 
 let cam;
 
@@ -7,6 +8,12 @@ let currentBoundary = false;
 let boundaryX = 0;
 let boundaryY = 0;
 let boundaryZ = 0;
+let previousBoundaryZ = 0;
+
+let octree;
+let octreeStartingValueLimit = 1;
+let showOctree = false;
+let fastMode = true;
 
 function firstPersonCamera(cam, speed = 10) {
     // store state
@@ -86,22 +93,72 @@ function toggleBoundary() {
     }
 }
 
+function toggleOctree() {
+    showOctree = !showOctree;
+
+    if (showOctree) {
+        document.getElementById('octreeButton').value = 'Showing octree';
+    }
+    else {
+        document.getElementById('octreeButton').value = 'No octree';
+    }
+}
+
+function toggleFast() {
+    fastMode = !fastMode;
+
+    if (fastMode) {
+        document.getElementById('fastButton').value = 'Fast';
+        octreeStartingValueLimit = 32;
+        setAttributes('antialias', false);
+    }
+    else {
+        document.getElementById('fastButton').value = 'Pretty';
+        octreeStartingValueLimit = 1;
+        setAttributes('antialias', true);
+    }
+
+    rebuildOctree();
+}
+
+function rebuildOctree() {
+    octree = new Octree(create3dVector(-boundaryX, -boundaryY, -boundaryZ),
+                        create3dVector(boundaryX, boundaryY, boundaryZ),
+                        octreeStartingValueLimit,
+                        fastMode);
+
+    for (let i = 0; i < flock.length; i++) {
+        octree.insert(flock[i]);
+    }
+}
+
 function adjustSize() {
     boundaryX = (windowWidth - 16) / 2;
     boundaryY = (windowHeight - 64) / 2;
 
     document.getElementById('depthSlider').max = boundaryX;
+
+    rebuildOctree();
 }
 
 function setup() {
     createCanvas(windowWidth - 16, windowHeight - 64, WEBGL);
+
+    strokeWeight(1);
+
     cam = createCamera();
 
     adjustSize();
 
-    const n = 512;
-    for (let i = 0; i < n; i++) {
-        flock.push(new Boid(boundaryX, boundaryY, boundaryZ));
+    octree = new Octree(create3dVector(-boundaryX, -boundaryY, -boundaryZ),
+                        create3dVector(boundaryX, boundaryY, boundaryZ),
+                        octreeStartingValueLimit,
+                        fastMode);
+
+    for (let i = 0; i < flockSize; i++) {
+        const boid = new Boid(boundaryX, boundaryY, boundaryZ);
+        flock.push(boid);
+        octree.insert(flock[i]);
     }
 }
 
@@ -113,17 +170,29 @@ function windowResized() {
 function draw() {
     background(32, 32, 32);
 
+    previousBoundaryZ = boundaryZ;
     boundaryZ = Number(document.getElementById('depthSlider').value);
+
+    if (boundaryZ !== previousBoundaryZ) {
+        rebuildOctree();
+    }
+
     const alignment = Number(document.getElementById('alignmentSlider').value);
     const cohesion = Number(document.getElementById('cohesionSlider').value);
     const separation = Number(document.getElementById('separationSlider').value);
 
-    noFill();
     stroke(255);
-    box(-boundaryX * 2, -boundaryY * 2, -boundaryZ * 2);
 
     for (let i = 0; i < flock.length; i++) {
         const boid = flock[i];
+
+        if (!fastMode) {
+            octree.delete(boid);
+        }
+
+        boid.flocking(octree, alignment, cohesion, separation, fastMode);
+        boid.update();
+        boid.draw(fastMode);
 
         if (currentBoundary) {
             boid.boundary(boundaryX, boundaryY, boundaryZ);
@@ -132,10 +201,20 @@ function draw() {
             boid.infiniteBoundary(boundaryX, boundaryY, boundaryZ);
         }
 
-        boid.flocking(flock, alignment, cohesion, separation);
-        boid.update();
-        boid.draw();
+        if (!fastMode) {
+            octree.insert(boid);
+        }
+    }
+
+    if (showOctree) {
+        noFill();
+        stroke(192, 192, 192, 128);
+        octree.draw();
     }
 
     firstPersonCamera(cam, 20);
+
+    if (fastMode) {
+        rebuildOctree();
+    }
 }

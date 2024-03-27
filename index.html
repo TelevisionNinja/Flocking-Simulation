@@ -3,6 +3,7 @@
         <script src="https://cdn.jsdelivr.net/npm/p5@1.9.2/lib/p5.js"></script>
         <script src="sketch.js"></script>
         <script src="boid.js"></script>
+        <script src="octree.js"></script>
     </head>
     <body>
         <main>
@@ -19,6 +20,8 @@
             <input id="depthSlider" name="depthSlider" type="range" max="boundaryX" min="0" title="depth" step="1" value="0"></input>
 
             <input id="boundaryButton" name="boundaryButton" type="button" value="No boundary" onclick="toggleBoundary()"></button>
+            <input id="octreeButton" name="octreeButton" type="button" value="No octree" onclick="toggleOctree()"></button>
+            <input id="fastButton" name="fastButton" type="button" value="Fast" onclick="toggleFast()"></button>
         </main>
     </body>
 </html>
