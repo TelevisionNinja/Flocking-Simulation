@@ -2,6 +2,10 @@ function distance(x, y, z) {
     return Math.sqrt(x * x + y * y + z * z);
 }
 
+function distanceFast(x, y, z) {
+    return x * x + y * y + z * z;
+}
+
 /**
  * 
  * @param {*} min inclusive min
@@ -207,109 +211,85 @@ class Boid {
         }
     }
 
-    alignment(boids) {
-        let perceptionRadius = 35;
-        let steering = {
-            x: 0,
-            y: 0,
-            z: 0
-        };
-        let total = 0;
-
-        for (let i = 0; i < boids.length; i++) {
-            const other = boids[i];
-            const d = distance(this.position.x - other.position.x, this.position.y - other.position.y, this.position.z - other.position.z);
-
-            if (other !== this && d < perceptionRadius) {
-                steering = addition(steering, other.velocity);
-                total++;
-            }
-        }
-
-        if (total > 0) {
-            steering = division(total, steering);
-            steering = setMagnitude(this.maxVelocity, steering);
-            steering = subtraction(steering, this.velocity);
-            steering = limitMaxMagnitude(this.maxForce, steering);
-        }
-
-        return steering;
-    }
-
-    cohesion(boids) {
-        let perceptionRadius = 50;
-        let steering = {
-            x: 0,
-            y: 0,
-            z: 0
-        };
-        let total = 0;
-
-        for (let i = 0; i < boids.length; i++) {
-            const other = boids[i];
-            const d = distance(this.position.x - other.position.x, this.position.y - other.position.y, this.position.z - other.position.z);
-
-            if (other !== this && d < perceptionRadius) {
-                steering = addition(steering, other.position);
-                total++;
-            }
-        }
-
-        if (total > 0) {
-            steering = division(total, steering);
-            steering = subtraction(steering, this.position);
-            steering = setMagnitude(this.maxVelocity, steering);
-            steering = subtraction(steering, this.velocity);
-            steering = limitMaxMagnitude(this.maxForce, steering);
-        }
-
-        return steering;
-    }
-
-    separation(boids) {
-        let perceptionRadius = 25;
-        let steering = {
-            x: 0,
-            y: 0,
-            z: 0
-        };
-        let total = 0;
-
-        for (let i = 0; i < boids.length; i++) {
-            const other = boids[i];
-            const d = distance(this.position.x - other.position.x, this.position.y - other.position.y, this.position.z - other.position.z);
-
-            if (other !== this && d < perceptionRadius && d > 0) {
-                let difference = subtraction(this.position, other.position);
-                const dSquared = d * d;
-                difference = division(dSquared, difference);
-                steering = addition(steering, difference);
-
-                total++;
-            }
-        }
-
-        if (total > 0) {
-            steering = division(total, steering);
-            steering = setMagnitude(this.maxVelocity, steering);
-            steering = subtraction(steering, this.velocity);
-            steering = limitMaxMagnitude(this.maxForce, steering);
-        }
-
-        return steering;
-    }
-
     flocking(boids, alignmentProportion = 1, cohesionProportion = 1, separationProportion = 1) {
-        let alignment = this.alignment(boids);
-        let cohesion = this.cohesion(boids);
-        let separation = this.separation(boids);
+        let alignmentPerceptionRadius = 35;
+        alignmentPerceptionRadius *= alignmentPerceptionRadius;
+        let alignmentSteering = {
+            x: 0,
+            y: 0,
+            z: 0
+        };
+        let alignmentTotal = 0;
 
-        alignment = multiplication(alignmentProportion, alignment);
-        cohesion = multiplication(cohesionProportion, cohesion);
-        separation = multiplication(separationProportion, separation);
+        let cohesionPerceptionRadius = 50;
+        cohesionPerceptionRadius *= cohesionPerceptionRadius;
+        let cohesionSteering = {
+            x: 0,
+            y: 0,
+            z: 0
+        };
+        let cohesionTotal = 0;
 
-        this.acceleration = addition(this.acceleration, alignment);
-        this.acceleration = addition(this.acceleration, cohesion);
-        this.acceleration = addition(this.acceleration, separation);
+        let separationPerceptionRadius = 25;
+        separationPerceptionRadius *= separationPerceptionRadius;
+        let separationSteering = {
+            x: 0,
+            y: 0,
+            z: 0
+        };
+        let separationTotal = 0;
+
+        for (let i = 0; i < boids.length; i++) {
+            const other = boids[i];
+            const d = distanceFast(this.position.x - other.position.x, this.position.y - other.position.y, this.position.z - other.position.z);
+
+            if (other !== this) {
+                if (d < alignmentPerceptionRadius) {
+                    alignmentSteering = addition(alignmentSteering, other.velocity);
+                    alignmentTotal++;
+                }
+
+                if (d < cohesionPerceptionRadius) {
+                    cohesionSteering = addition(cohesionSteering, other.position);
+                    cohesionTotal++;
+                }
+
+                if (d < separationPerceptionRadius && d > 0) {
+                    let difference = subtraction(this.position, other.position);
+                    difference = division(d, difference);
+                    separationSteering = addition(separationSteering, difference);
+
+                    separationTotal++;
+                }
+            }
+        }
+
+        if (alignmentTotal > 0) {
+            alignmentSteering = division(alignmentTotal, alignmentSteering);
+            alignmentSteering = setMagnitude(this.maxVelocity, alignmentSteering);
+            alignmentSteering = subtraction(alignmentSteering, this.velocity);
+            alignmentSteering = limitMaxMagnitude(this.maxForce, alignmentSteering);
+            alignmentSteering = multiplication(alignmentProportion, alignmentSteering);
+            this.acceleration = addition(this.acceleration, alignmentSteering);
+        }
+
+        if (cohesionTotal > 0) {
+            cohesionSteering = division(cohesionTotal, cohesionSteering);
+            cohesionSteering = subtraction(cohesionSteering, this.position);
+            cohesionSteering = setMagnitude(this.maxVelocity, cohesionSteering);
+            cohesionSteering = subtraction(cohesionSteering, this.velocity);
+            cohesionSteering = limitMaxMagnitude(this.maxForce, cohesionSteering);
+            cohesionSteering = multiplication(cohesionProportion, cohesionSteering);
+            this.acceleration = addition(this.acceleration, cohesionSteering);
+        }
+
+        if (separationTotal > 0) {
+            separationSteering = division(separationTotal, separationSteering);
+            separationSteering = setMagnitude(this.maxVelocity, separationSteering);
+            separationSteering = subtraction(separationSteering, this.velocity);
+            separationSteering = limitMaxMagnitude(this.maxForce, separationSteering);
+            separationSteering = multiplication(separationProportion, separationSteering);
+            this.acceleration = addition(this.acceleration, separationSteering);
+        }
     }
 }
