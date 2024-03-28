@@ -46,7 +46,7 @@ function drawBox(topLeftFrontVector, bottomRightBackVector) {
 }
 
 class Octree {
-    constructor(topLeftFrontVector, bottomRightBackVector, startingLimit = 2, fastMode = false) {
+    constructor(topLeftFrontVector, bottomRightBackVector, startingLimit = 2, fastMode = false, limitIncreaseAmount = 1, depthLimit = 32) {
         this.values = [];
 
         if (startingLimit < 1) {
@@ -62,6 +62,9 @@ class Octree {
         this.children = [null, null, null, null, null, null, null, null];
 
         this.fastMode = fastMode;
+        this.limitIncreaseAmount = limitIncreaseAmount;
+        this.depthLimit = depthLimit;
+        this.depth = 0;
     }
 
     getMidpoints() {
@@ -146,7 +149,7 @@ class Octree {
         }
 
         // the root node is just holding the vector
-        if (!this.isSubdivided && this.values.length < this.startingLimit) {
+        if (this.depthLimit <= this.depth || (!this.isSubdivided && this.values.length < this.startingLimit)) {
             this.values.push(vector);
             return;
         }
@@ -167,42 +170,68 @@ class Octree {
             if (position === TopLeftFront) {
                 this.children[position] = new Octree(this.topLeftFront,
                                                     create3dVector(middleX, middleY, middleZ),
-                                                    this.startingLimit + 1);
+                                                    this.startingLimit + this.limitIncreaseAmount,
+                                                    this.fastMode,
+                                                    this.limitIncreaseAmount,
+                                                    this.depthLimit);
             }
             else if (position === TopRightFront) {
                 this.children[position] = new Octree(create3dVector(middleX, this.topLeftFront.position.y, this.topLeftFront.position.z),
                                                 create3dVector(this.bottomRightBack.position.x, middleY, middleZ),
-                                                this.startingLimit + 1);
+                                                this.startingLimit + this.limitIncreaseAmount,
+                                                this.fastMode,
+                                                this.limitIncreaseAmount,
+                                                this.depthLimit);
             }
             else if (position === BottomRightFront) {
                 this.children[position] = new Octree(create3dVector(middleX, middleY, this.topLeftFront.position.z),
                                                 create3dVector(this.bottomRightBack.position.x, this.bottomRightBack.position.y, middleZ),
-                                                this.startingLimit + 1);
+                                                this.startingLimit + this.limitIncreaseAmount,
+                                                this.fastMode,
+                                                this.limitIncreaseAmount,
+                                                this.depthLimit);
             }
             else if (position === BottomLeftFront) {
                 this.children[position] = new Octree(create3dVector(this.topLeftFront.position.x, middleY, this.topLeftFront.position.z),
                                                 create3dVector(middleX, this.bottomRightBack.position.y, middleZ),
-                                                this.startingLimit + 1);
+                                                this.startingLimit + this.limitIncreaseAmount,
+                                                this.fastMode,
+                                                this.limitIncreaseAmount,
+                                                this.depthLimit);
             }
             else if (position === TopLeftBottom) {
                 this.children[position] = new Octree(create3dVector(this.topLeftFront.position.x, this.topLeftFront.position.y, middleZ),
                                                 create3dVector(middleX, middleY, this.bottomRightBack.position.z),
-                                                this.startingLimit + 1);
+                                                this.startingLimit + this.limitIncreaseAmount,
+                                                this.fastMode,
+                                                this.limitIncreaseAmount,
+                                                this.depthLimit);
             }
             else if (position === TopRightBottom) {
                 this.children[position] = new Octree(create3dVector(middleX, this.topLeftFront.position.y, middleZ),
                                                 create3dVector(this.bottomRightBack.position.x, middleY, this.bottomRightBack.position.z),
-                                                this.startingLimit + 1);
+                                                this.startingLimit + this.limitIncreaseAmount,
+                                                this.fastMode,
+                                                this.limitIncreaseAmount,
+                                                this.depthLimit);
             }
             else if (position === BottomRightBack) {
                 this.children[position] = new Octree(create3dVector(middleX, middleY, middleZ), this.bottomRightBack,
-                                                    this.startingLimit + 1);
+                                                    this.startingLimit + this.limitIncreaseAmount,
+                                                    this.fastMode,
+                                                    this.limitIncreaseAmount,
+                                                    this.depthLimit);
             }
             else if (position === BottomLeftBack) {
                 this.children[position] = new Octree(create3dVector(this.topLeftFront.position.x, middleY, middleZ),
                                                 create3dVector(middleX, this.bottomRightBack.position.y, this.bottomRightBack.position.z),
-                                                this.startingLimit + 1);
+                                                this.startingLimit + this.limitIncreaseAmount,
+                                                this.fastMode,
+                                                this.limitIncreaseAmount,
+                                                this.depthLimit);
             }
+
+            this.children[position].depth = this.depth + 1;
         }
 
         this.children[position].insert(vector);
@@ -311,6 +340,41 @@ class Octree {
         }
 
         return this.values;
+    }
+
+    /**
+     * depth first search
+     * 
+     * @param {*} topLeftFrontVector 
+     * @param {*} bottomRightBackVector 
+     * @returns array
+     */
+    getVectorsIterative(topLeftFrontVector, bottomRightBackVector) {
+        let stack = [];
+        stack.push(this);
+
+        let totalVectors = [];
+
+        while (stack.length !== 0) {
+            const currentNode = stack.pop(); // dfs
+            // const currentNode = stack.shift(); // bfs
+
+            if (currentNode.isCubeIntersecting(topLeftFrontVector, bottomRightBackVector, currentNode.topLeftFront, currentNode.bottomRightBack)) {
+                if (currentNode.isSubdivided) {
+                    for (let i = 0; i < currentNode.children.length; i++) {
+                        const currentChild = currentNode.children[i];
+                        if (currentChild !== null) {
+                            stack.push(currentChild);
+                        }
+                    }
+                }
+                else {
+                    totalVectors = [...totalVectors, ...currentNode.values];
+                }
+            }
+        }
+
+        return totalVectors;
     }
 
     countVectors() {
