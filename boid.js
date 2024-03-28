@@ -231,7 +231,7 @@ class Boid {
             z: 0
         };
         let alignmentTotal = 0;
-        let alignmentBoids = octree.getVectors(alignmentTopLeftFront, alignmentBottomRightBack);
+        let alignmentBoids = octree.getVectorsIterative(alignmentTopLeftFront, alignmentBottomRightBack);
 
         for (let i = 0; i < alignmentBoids.length; i++) {
             const other = alignmentBoids[i];
@@ -270,7 +270,7 @@ class Boid {
             z: 0
         };
         let cohesionTotal = 0;
-        let cohesionBoids = octree.getVectors(cohesionTopLeftFront, cohesionBottomRightBack);
+        let cohesionBoids = octree.getVectorsIterative(cohesionTopLeftFront, cohesionBottomRightBack);
 
         for (let i = 0; i < cohesionBoids.length; i++) {
             const other = cohesionBoids[i];
@@ -310,7 +310,7 @@ class Boid {
             z: 0
         };
         let separationTotal = 0;
-        let separationBoids = octree.getVectors(separationTopLeftFront, separationBottomRightBack);
+        let separationBoids = octree.getVectorsIterative(separationTopLeftFront, separationBottomRightBack);
 
         for (let i = 0; i < separationBoids.length; i++) {
             const other = separationBoids[i];
@@ -353,7 +353,7 @@ class Boid {
                 z: 0
             };
             let alignmentTotal = 0;
-            // let alignmentBoids = octree.getVectors(alignmentTopLeftFront, alignmentBottomRightBack);
+            // let alignmentBoids = octree.getVectorsIterative(alignmentTopLeftFront, alignmentBottomRightBack);
 
             let cohesionPerceptionRadius = 50;
 
@@ -371,7 +371,7 @@ class Boid {
                 z: 0
             };
             let cohesionTotal = 0;
-            let cohesionBoids = octree.getVectors(cohesionTopLeftFront, cohesionBottomRightBack);
+            let cohesionBoids = octree.getVectorsIterative(cohesionTopLeftFront, cohesionBottomRightBack);
 
             let separationPerceptionRadius = 25;
 
@@ -389,7 +389,7 @@ class Boid {
                 z: 0
             };
             let separationTotal = 0;
-            // let separationBoids = octree.getVectors(separationTopLeftFront, separationBottomRightBack);
+            // let separationBoids = octree.getVectorsIterative(separationTopLeftFront, separationBottomRightBack);
 
             for (let i = 0; i < cohesionBoids.length; i++) {
                 const other = cohesionBoids[i];

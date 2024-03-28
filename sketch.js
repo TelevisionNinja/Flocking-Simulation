@@ -14,6 +14,7 @@ let octree;
 let octreeStartingValueLimit = 1;
 let showOctree = false;
 let fastMode = true;
+let depthLimit = 4;
 
 function firstPersonCamera(cam, speed = 10) {
     // store state
@@ -110,11 +111,13 @@ function toggleFast() {
     if (fastMode) {
         document.getElementById('fastButton').value = 'Fast';
         octreeStartingValueLimit = 32;
+        depthLimit = 4;
         setAttributes('antialias', false);
     }
     else {
         document.getElementById('fastButton').value = 'Pretty';
         octreeStartingValueLimit = 1;
+        depthLimit = 16;
         setAttributes('antialias', true);
     }
 
@@ -125,7 +128,9 @@ function rebuildOctree() {
     octree = new Octree(create3dVector(-boundaryX, -boundaryY, -boundaryZ),
                         create3dVector(boundaryX, boundaryY, boundaryZ),
                         octreeStartingValueLimit,
-                        fastMode);
+                        fastMode,
+                        2,
+                        depthLimit);
 
     for (let i = 0; i < flock.length; i++) {
         octree.insert(flock[i]);
@@ -153,7 +158,9 @@ function setup() {
     octree = new Octree(create3dVector(-boundaryX, -boundaryY, -boundaryZ),
                         create3dVector(boundaryX, boundaryY, boundaryZ),
                         octreeStartingValueLimit,
-                        fastMode);
+                        fastMode,
+                        2,
+                        depthLimit);
 
     for (let i = 0; i < flockSize; i++) {
         const boid = new Boid(boundaryX, boundaryY, boundaryZ);
