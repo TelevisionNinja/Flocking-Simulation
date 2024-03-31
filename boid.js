@@ -119,25 +119,13 @@ class Boid {
         };
 
         this.maxForce = 0.5;
-        this.pointing = {
-            x: 0,
-            y: 0,
-            z: 0
-        };
     }
 
     update() {
-        this.pointing = this.position;
-
         this.position = addition(this.position, this.velocity);
         this.velocity = addition(this.velocity, this.acceleration);
         this.velocity = limitMaxMagnitude(this.maxVelocity, this.velocity);
         this.acceleration = multiplication(0, this.acceleration);
-
-        // line of direction
-        this.pointing = subtraction(this.position, this.pointing);
-        this.pointing = setMagnitude(15, this.pointing);
-        this.pointing = addition(this.position, this.pointing);
     }
 
     draw(fastMode) {
@@ -146,7 +134,8 @@ class Boid {
         }
         else {
             drawSphere(this.position, 2);
-            line(this.position.x, this.position.y, this.position.z, this.pointing.x, this.pointing.y, this.pointing.z);
+            const pointing = addition(this.position, setMagnitude(15, this.velocity));
+            line(this.position.x, this.position.y, this.position.z, pointing.x, pointing.y, pointing.z);
         }
     }
 
