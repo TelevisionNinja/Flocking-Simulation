@@ -125,10 +125,9 @@ function toggleFast() {
 }
 
 function rebuildOctree() {
-    octree = new Octree(create3dVector(-boundaryX, -boundaryY, -boundaryZ),
+    octree = new OctreeFast(create3dVector(-boundaryX, -boundaryY, -boundaryZ),
                         create3dVector(boundaryX, boundaryY, boundaryZ),
                         octreeStartingValueLimit,
-                        fastMode,
                         2,
                         depthLimit);
 
@@ -155,10 +154,9 @@ function setup() {
 
     adjustSize();
 
-    octree = new Octree(create3dVector(-boundaryX, -boundaryY, -boundaryZ),
+    octree = new OctreeFast(create3dVector(-boundaryX, -boundaryY, -boundaryZ),
                         create3dVector(boundaryX, boundaryY, boundaryZ),
                         octreeStartingValueLimit,
-                        fastMode,
                         2,
                         depthLimit);
 

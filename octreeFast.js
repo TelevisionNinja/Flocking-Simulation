@@ -24,8 +24,8 @@ function drawBox(x, y, z, width, height, depth) {
     pop();
 }
 
-class Octree {
-    constructor(topLeftFrontVector, bottomRightBackVector, startingLimit = 2, fastMode = false, limitIncreaseAmount = 1, depthLimit = 32) {
+class OctreeFast {
+    constructor(topLeftFrontVector, bottomRightBackVector, startingLimit = 2, limitIncreaseAmount = 1, depthLimit = 32) {
         this.values = [];
 
         if (startingLimit < 1) {
@@ -40,7 +40,6 @@ class Octree {
         this.bottomRightBack = bottomRightBackVector;
         this.children = [null, null, null, null, null, null, null, null];
 
-        this.fastMode = fastMode;
         this.limitIncreaseAmount = limitIncreaseAmount;
         this.depthLimit = depthLimit;
         this.depth = 0;
@@ -146,65 +145,57 @@ class Octree {
         // add child nodes
         if (currentChild === null) {
             if (position === TopLeftFront) {
-                this.children[position] = new Octree(this.topLeftFront,
+                this.children[position] = new OctreeFast(this.topLeftFront,
                                                     create3dVector(middleX, middleY, middleZ),
                                                     this.startingLimit + this.limitIncreaseAmount,
-                                                    this.fastMode,
                                                     this.limitIncreaseAmount,
                                                     this.depthLimit);
             }
             else if (position === TopRightFront) {
-                this.children[position] = new Octree(create3dVector(middleX, this.topLeftFront.position.y, this.topLeftFront.position.z),
+                this.children[position] = new OctreeFast(create3dVector(middleX, this.topLeftFront.position.y, this.topLeftFront.position.z),
                                                 create3dVector(this.bottomRightBack.position.x, middleY, middleZ),
                                                 this.startingLimit + this.limitIncreaseAmount,
-                                                this.fastMode,
                                                 this.limitIncreaseAmount,
                                                 this.depthLimit);
             }
             else if (position === BottomRightFront) {
-                this.children[position] = new Octree(create3dVector(middleX, middleY, this.topLeftFront.position.z),
+                this.children[position] = new OctreeFast(create3dVector(middleX, middleY, this.topLeftFront.position.z),
                                                 create3dVector(this.bottomRightBack.position.x, this.bottomRightBack.position.y, middleZ),
                                                 this.startingLimit + this.limitIncreaseAmount,
-                                                this.fastMode,
                                                 this.limitIncreaseAmount,
                                                 this.depthLimit);
             }
             else if (position === BottomLeftFront) {
-                this.children[position] = new Octree(create3dVector(this.topLeftFront.position.x, middleY, this.topLeftFront.position.z),
+                this.children[position] = new OctreeFast(create3dVector(this.topLeftFront.position.x, middleY, this.topLeftFront.position.z),
                                                 create3dVector(middleX, this.bottomRightBack.position.y, middleZ),
                                                 this.startingLimit + this.limitIncreaseAmount,
-                                                this.fastMode,
                                                 this.limitIncreaseAmount,
                                                 this.depthLimit);
             }
             else if (position === TopLeftBottom) {
-                this.children[position] = new Octree(create3dVector(this.topLeftFront.position.x, this.topLeftFront.position.y, middleZ),
+                this.children[position] = new OctreeFast(create3dVector(this.topLeftFront.position.x, this.topLeftFront.position.y, middleZ),
                                                 create3dVector(middleX, middleY, this.bottomRightBack.position.z),
                                                 this.startingLimit + this.limitIncreaseAmount,
-                                                this.fastMode,
                                                 this.limitIncreaseAmount,
                                                 this.depthLimit);
             }
             else if (position === TopRightBottom) {
-                this.children[position] = new Octree(create3dVector(middleX, this.topLeftFront.position.y, middleZ),
+                this.children[position] = new OctreeFast(create3dVector(middleX, this.topLeftFront.position.y, middleZ),
                                                 create3dVector(this.bottomRightBack.position.x, middleY, this.bottomRightBack.position.z),
                                                 this.startingLimit + this.limitIncreaseAmount,
-                                                this.fastMode,
                                                 this.limitIncreaseAmount,
                                                 this.depthLimit);
             }
             else if (position === BottomRightBack) {
-                this.children[position] = new Octree(create3dVector(middleX, middleY, middleZ), this.bottomRightBack,
+                this.children[position] = new OctreeFast(create3dVector(middleX, middleY, middleZ), this.bottomRightBack,
                                                     this.startingLimit + this.limitIncreaseAmount,
-                                                    this.fastMode,
                                                     this.limitIncreaseAmount,
                                                     this.depthLimit);
             }
             else if (position === BottomLeftBack) {
-                this.children[position] = new Octree(create3dVector(this.topLeftFront.position.x, middleY, middleZ),
+                this.children[position] = new OctreeFast(create3dVector(this.topLeftFront.position.x, middleY, middleZ),
                                                 create3dVector(middleX, this.bottomRightBack.position.y, this.bottomRightBack.position.z),
                                                 this.startingLimit + this.limitIncreaseAmount,
-                                                this.fastMode,
                                                 this.limitIncreaseAmount,
                                                 this.depthLimit);
             }
@@ -213,17 +204,6 @@ class Octree {
         }
 
         this.children[position].insert(vector);
-
-        if (!this.fastMode) {
-            // clear out this node as it is now subdivided
-            const previousValues = this.values;
-            this.values = [];
-
-            for (let i = 0; i < previousValues.length; i++) {
-                const currentValue = previousValues[i];
-                this.insert(currentValue);
-            }
-        }
     }
 
     /**
@@ -236,8 +216,8 @@ class Octree {
             return false;
         }
 
-        if (!this.isSubdivided) {
-            return this.values.indexOf(vector) !== -1;
+        if (this.values.indexOf(vector) !== -1) {
+            return true;
         }
 
         const {
@@ -261,18 +241,16 @@ class Octree {
      * detect unused child nodes
      * @returns boolean
      */
-    hasChildren() {
+    isNotEmpty() {
         if (this.isSubdivided) {
             for (let i = 0; i < this.children.length; i++) {
                 if (this.children[i] !== null) {
                     return true;
                 }
             }
-
-            return false;
         }
 
-        return true;
+        return this.values.length > 0;
     }
 
     isCubeIntersecting(topLeftFront, bottomRightBack, topLeftFrontBoundary, bottomRightBackBoundary) {
@@ -282,51 +260,63 @@ class Octree {
     }
 
     getAllVectors() {
-        if (this.isSubdivided) {
-            let totalVectors = [];
+        let totalVectors = this.values;
 
+        if (this.isSubdivided) {
             for (let i = 0; i < this.children.length; i++) {
                 const currentChild = this.children[i];
                 if (currentChild !== null) {
                     totalVectors = [...totalVectors, ...currentChild.getAllVectors()];
                 }
             }
-
-            return totalVectors;
         }
 
-        return this.values;
+        return totalVectors;
     }
 
-    getVectors(topLeftFrontVector, bottomRightBackVector) {
+    /**
+     * 
+     * @param {*} topLeftFrontVector 
+     * @param {*} bottomRightBackVector 
+     * @param {*} limit limit the returned array size
+     * @returns array
+     */
+    getVectors(topLeftFrontVector, bottomRightBackVector, limit = null) {
         if (!this.isCubeIntersecting(topLeftFrontVector, bottomRightBackVector, this.topLeftFront, this.bottomRightBack)) {
             return [];
         }
 
-        if (this.isSubdivided) {
-            let totalVectors = [];
+        let totalVectors = this.values;
 
+        if (this.isSubdivided) {
             for (let i = 0; i < this.children.length; i++) {
                 const currentChild = this.children[i];
                 if (currentChild !== null) {
-                    totalVectors = [...totalVectors, ...currentChild.getVectors(topLeftFrontVector, bottomRightBackVector)];
+                    totalVectors = [...totalVectors, ...currentChild.getVectors(topLeftFrontVector, bottomRightBackVector, limit)];
+
+                    if (limit !== null && totalVectors.length > limit) {
+                        totalVectors.splice(0, limit);
+                        return totalVectors;
+                    }
                 }
             }
-
-            return totalVectors;
         }
 
-        return this.values;
+        if (limit !== null && totalVectors.length > limit) {
+            totalVectors.splice(0, limit);
+        }
+
+        return totalVectors;
     }
 
     /**
      * depth first search
-     * 
      * @param {*} topLeftFrontVector 
      * @param {*} bottomRightBackVector 
+     * @param {*} limit limit the returned array size
      * @returns array
      */
-    getVectorsIterative(topLeftFrontVector, bottomRightBackVector) {
+    getVectorsIterative(topLeftFrontVector, bottomRightBackVector, limit = null) {
         let stack = [];
         stack.push(this);
 
@@ -337,6 +327,13 @@ class Octree {
             // const currentNode = stack.shift(); // bfs
 
             if (currentNode.isCubeIntersecting(topLeftFrontVector, bottomRightBackVector, currentNode.topLeftFront, currentNode.bottomRightBack)) {
+                totalVectors = [...totalVectors, ...currentNode.values];
+
+                if (limit !== null && totalVectors.length > limit) {
+                    totalVectors.splice(0, limit);
+                    return totalVectors;
+                }
+
                 if (currentNode.isSubdivided) {
                     for (let i = 0; i < currentNode.children.length; i++) {
                         const currentChild = currentNode.children[i];
@@ -345,9 +342,6 @@ class Octree {
                         }
                     }
                 }
-                else {
-                    totalVectors = [...totalVectors, ...currentNode.values];
-                }
             }
         }
 
@@ -355,20 +349,47 @@ class Octree {
     }
 
     countVectors() {
-        if (this.isSubdivided) {
-            let total = 0;
+        let total = this.values.length;
 
+        if (this.isSubdivided) {
             for (let i = 0; i < this.children.length; i++) {
                 const currentChild = this.children[i];
                 if (currentChild !== null) {
                     total += currentChild.countVectors();
                 }
             }
-
-            return total;
         }
 
-        return this.values.length;
+        return total;
+    }
+
+    countVectorsIterative(limit = null) {
+        let stack = [];
+        stack.push(this);
+
+        let total = 0;
+
+        while (stack.length !== 0) {
+            const currentNode = stack.pop(); // dfs
+            // const currentNode = stack.shift(); // bfs
+
+            total += currentNode.values.length;
+
+            if (limit !== null && total >= limit) {
+                return total;
+            }
+
+            if (currentNode.isSubdivided) {
+                for (let i = 0; i < currentNode.children.length; i++) {
+                    const currentChild = currentNode.children[i];
+                    if (currentChild !== null) {
+                        stack.push(currentChild);
+                    }
+                }
+            }
+        }
+
+        return total;
     }
 
     delete(vector) {
@@ -376,14 +397,11 @@ class Octree {
             return;
         }
 
-        // the node has values
-        if (!this.isSubdivided) {
-            const index = this.values.indexOf(vector);
+        // the node has the value
+        const index = this.values.indexOf(vector);
 
-            if (index !== -1) {
-                this.values.splice(index, 1);
-            }
-
+        if (index !== -1) {
+            this.values.splice(index, 1);
             return;
         }
 
@@ -400,41 +418,35 @@ class Octree {
         if (currentChild !== null) {
             currentChild.delete(vector);
 
-            if (!this.fastMode) {
-                // delete empty child nodes
-                if (!currentChild.hasChildren()) {
-                    this.children[position] = null;
-                }
+            // delete empty child nodes
+            if (!currentChild.isNotEmpty()) {
+                this.children[position] = null;
+            }
 
-                if (!this.hasChildren()) {
+            if (!this.isNotEmpty()) {
+                this.isSubdivided = false;
+            }
+            else {
+                // reorder tree
+                if (this.countVectorsIterative(this.startingLimit + 1) <= this.startingLimit) {
+                    this.values = this.getAllVectors();
                     this.isSubdivided = false;
-                }
-                else {
-                    // reorder tree
-                    if (this.countVectors() <= this.startingLimit) {
-                        this.values = this.getAllVectors();
-                        this.isSubdivided = false;
 
-                        for (let i = 0; i < this.children.length; i++) {
-                            this.children[i] = null;
-                        }
+                    for (let i = 0; i < this.children.length; i++) {
+                        this.children[i] = null;
                     }
                 }
             }
         }
     }
 
-    draw(drawAllRootOctants = false) {
+    draw() {
         if (this.isSubdivided) {
             for (let i = 0; i < this.children.length; i++) {
                 const currentChild = this.children[i];
                 if (currentChild !== null) {
-                    currentChild.draw(drawAllRootOctants);
+                    currentChild.draw();
                 }
-            }
-
-            if (!drawAllRootOctants) {
-                return;
             }
         }
 

@@ -342,7 +342,7 @@ class Boid {
                 z: 0
             };
             let alignmentTotal = 0;
-            // let alignmentBoids = octree.getVectorsIterative(alignmentTopLeftFront, alignmentBottomRightBack);
+            // let alignmentBoids = octree.getVectorsIterative(alignmentTopLeftFront, alignmentBottomRightBack, 128);
 
             let cohesionPerceptionRadius = 50;
 
@@ -360,7 +360,7 @@ class Boid {
                 z: 0
             };
             let cohesionTotal = 0;
-            let cohesionBoids = octree.getVectorsIterative(cohesionTopLeftFront, cohesionBottomRightBack);
+            let cohesionBoids = octree.getVectorsIterative(cohesionTopLeftFront, cohesionBottomRightBack, 128);
 
             let separationPerceptionRadius = 25;
 
@@ -378,7 +378,7 @@ class Boid {
                 z: 0
             };
             let separationTotal = 0;
-            // let separationBoids = octree.getVectorsIterative(separationTopLeftFront, separationBottomRightBack);
+            // let separationBoids = octree.getVectorsIterative(separationTopLeftFront, separationBottomRightBack, 128);
 
             for (let i = 0; i < cohesionBoids.length; i++) {
                 const other = cohesionBoids[i];
