@@ -3,7 +3,7 @@ const flockSize = 512;
 
 let cam;
 
-let currentBoundary = false;
+let hasBoundary = false;
 
 let boundaryX = 0;
 let boundaryY = 0;
@@ -84,9 +84,9 @@ function firstPersonCamera(cam, speed = 10) {
 }
 
 function toggleBoundary() {
-    currentBoundary = !currentBoundary;
+    hasBoundary = !hasBoundary;
 
-    if (currentBoundary) {
+    if (hasBoundary) {
         document.getElementById('boundaryButton').value = 'Has boundaries';
     }
     else {
@@ -201,7 +201,7 @@ function draw() {
         boid.update();
         boid.draw(fastMode);
 
-        if (currentBoundary) {
+        if (hasBoundary) {
             boid.boundary(boundaryX, boundaryY, boundaryZ);
         }
         else {
