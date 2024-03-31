@@ -17,22 +17,9 @@ function create3dVector(x, y, z) {
     };
 }
 
-function getMidpointVector(topLeftFrontVector, bottomRightBackVector) {
-    const middleX = (topLeftFrontVector.position.x + bottomRightBackVector.position.x) / 2;
-    const middleY = (topLeftFrontVector.position.y + bottomRightBackVector.position.y) / 2;
-    const middleZ = (topLeftFrontVector.position.z + bottomRightBackVector.position.z) / 2;
-
-    return create3dVector(middleX, middleY, middleZ);
-}
-
-function drawBox(topLeftFrontVector, bottomRightBackVector) {
-    const position = getMidpointVector(topLeftFrontVector, bottomRightBackVector).position;
-    const width = bottomRightBackVector.position.x - topLeftFrontVector.position.x;
-    const height = bottomRightBackVector.position.y - topLeftFrontVector.position.y;
-    const depth = bottomRightBackVector.position.z - topLeftFrontVector.position.z;
-
+function drawBox(x, y, z, width, height, depth) {
     push();
-    translate(position.x, position.y, position.z);
+    translate(x, y, z);
     box(width, height, depth);
     pop();
 }
@@ -451,6 +438,14 @@ class Octree {
             }
         }
 
-        drawBox(this.topLeftFront, this.bottomRightBack);
+        const {
+            middleX,
+            middleY,
+            middleZ
+        } = this.getMidpoints();
+        const width = this.bottomRightBack.position.x - this.topLeftFront.position.x;
+        const height = this.bottomRightBack.position.y - this.topLeftFront.position.y;
+        const depth = this.bottomRightBack.position.z - this.topLeftFront.position.z;
+        drawBox(middleX, middleY, middleZ, width, height, depth);
     }
 }
