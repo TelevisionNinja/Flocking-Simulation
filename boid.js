@@ -326,6 +326,8 @@ class Boid {
 
     flocking(octree, alignmentProportion = 1, cohesionProportion = 1, separationProportion = 1, fastMode = false) {
         if (fastMode) {
+            const limit = 64;
+
             let alignmentPerceptionRadius = 35;
 
             // const alignmentTopLeftFront = create3dVector(this.position.x - alignmentPerceptionRadius,
@@ -411,6 +413,12 @@ class Boid {
                 alignmentSteering = subtraction(alignmentSteering, this.velocity);
                 alignmentSteering = limitMaxMagnitude(this.maxForce, alignmentSteering);
                 alignmentSteering = multiplication(alignmentProportion, alignmentSteering);
+
+                // some correction for small sample on large population
+                if (alignmentTotal >= limit) {
+                    alignmentSteering = multiplication(limit / (alignmentTotal * 2), alignmentSteering);
+                }
+
                 this.acceleration = addition(this.acceleration, alignmentSteering);
             }
 
@@ -421,6 +429,12 @@ class Boid {
                 cohesionSteering = subtraction(cohesionSteering, this.velocity);
                 cohesionSteering = limitMaxMagnitude(this.maxForce, cohesionSteering);
                 cohesionSteering = multiplication(cohesionProportion, cohesionSteering);
+
+                // some correction for small sample on large population
+                if (cohesionTotal >= limit / 2) {
+                    cohesionSteering = multiplication(cohesionTotal / (limit * 1.5), cohesionSteering);
+                }
+
                 this.acceleration = addition(this.acceleration, cohesionSteering);
             }
 
@@ -430,6 +444,12 @@ class Boid {
                 separationSteering = subtraction(separationSteering, this.velocity);
                 separationSteering = limitMaxMagnitude(this.maxForce, separationSteering);
                 separationSteering = multiplication(separationProportion, separationSteering);
+
+                // some correction for small sample on large population
+                if (separationTotal >= limit / 2) {
+                    separationSteering = multiplication(4 * separationTotal / limit, separationSteering);
+                }
+
                 this.acceleration = addition(this.acceleration, separationSteering);
             }
         }
