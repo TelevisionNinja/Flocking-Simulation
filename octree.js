@@ -17,14 +17,6 @@ function create3dVector(x, y, z) {
     };
 }
 
-function removeOneArrayElementInPlace(array, element) {
-    const index = array.indexOf(element);
-
-    if (index !== -1) {
-        array.splice(index, 1);
-    }
-}
-
 function getMidpointVector(topLeftFrontVector, bottomRightBackVector) {
     const middleX = (topLeftFrontVector.position.x + bottomRightBackVector.position.x) / 2;
     const middleY = (topLeftFrontVector.position.y + bottomRightBackVector.position.y) / 2;
@@ -148,7 +140,6 @@ class Octree {
             return;
         }
 
-        // the root node is just holding the vector
         if (this.depthLimit <= this.depth || (!this.isSubdivided && this.values.length < this.startingLimit)) {
             this.values.push(vector);
             return;
@@ -259,8 +250,7 @@ class Octree {
         }
 
         if (!this.isSubdivided) {
-            const index = this.values.indexOf(vector);
-            return index !== -1;
+            return this.values.indexOf(vector) !== -1;
         }
 
         const {
@@ -399,9 +389,14 @@ class Octree {
             return;
         }
 
-        // the node has the vector
+        // the node has values
         if (!this.isSubdivided) {
-            removeOneArrayElementInPlace(this.values, vector);
+            const index = this.values.indexOf(vector);
+
+            if (index !== -1) {
+                this.values.splice(index, 1);
+            }
+
             return;
         }
 
