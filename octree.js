@@ -429,7 +429,7 @@ class Octree {
             for (let i = 0; i < this.children.length; i++) {
                 const currentChild = this.children[i];
                 if (currentChild !== null) {
-                    currentChild.draw();
+                    currentChild.draw(drawAllRootOctants);
                 }
             }
 
