@@ -426,17 +426,6 @@ class OctreeFast {
             if (!this.isNotEmpty()) {
                 this.isSubdivided = false;
             }
-            else {
-                // reorder tree
-                if (this.countVectorsIterative(this.startingLimit + 1) <= this.startingLimit) {
-                    this.values = this.getAllVectors();
-                    this.isSubdivided = false;
-
-                    for (let i = 0; i < this.children.length; i++) {
-                        this.children[i] = null;
-                    }
-                }
-            }
         }
     }
 
