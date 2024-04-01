@@ -120,8 +120,6 @@ function toggleFast() {
         depthLimit = 16;
         setAttributes('antialias', true);
     }
-
-    rebuildOctree();
 }
 
 function rebuildOctree() {
@@ -178,7 +176,7 @@ function draw() {
     previousBoundaryZ = boundaryZ;
     boundaryZ = Number(document.getElementById('depthSlider').value);
 
-    if (boundaryZ !== previousBoundaryZ) {
+    if (fastMode || boundaryZ !== previousBoundaryZ) {
         rebuildOctree();
     }
 
@@ -218,8 +216,4 @@ function draw() {
     }
 
     firstPersonCamera(cam, 20);
-
-    if (fastMode) {
-        rebuildOctree();
-    }
 }
