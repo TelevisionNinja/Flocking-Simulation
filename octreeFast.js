@@ -206,6 +206,95 @@ class OctreeFast {
         this.children[position].insert(vector);
     }
 
+    insertIterative(vector) {
+        if (!this.isPointInCube(vector, this.topLeftFront, this.bottomRightBack)) {
+            return;
+        }
+
+        let currentNode = this;
+
+        while (true) {
+            if (currentNode.depthLimit <= currentNode.depth || (!currentNode.isSubdivided && currentNode.values.length < currentNode.startingLimit)) {
+                currentNode.values.push(vector);
+                return;
+            }
+
+            currentNode.isSubdivided = true;
+
+            const {
+                position,
+                middleX,
+                middleY,
+                middleZ
+            } = currentNode.getChildIndex(vector);
+
+            const currentChild = currentNode.children[position];
+
+            // add child nodes
+            if (currentChild === null) {
+                if (position === TopLeftFront) {
+                    currentNode.children[position] = new OctreeFast(currentNode.topLeftFront,
+                                                        create3dVector(middleX, middleY, middleZ),
+                                                        currentNode.startingLimit + currentNode.limitIncreaseAmount,
+                                                        currentNode.limitIncreaseAmount,
+                                                        currentNode.depthLimit);
+                }
+                else if (position === TopRightFront) {
+                    currentNode.children[position] = new OctreeFast(create3dVector(middleX, currentNode.topLeftFront.position.y, currentNode.topLeftFront.position.z),
+                                                    create3dVector(currentNode.bottomRightBack.position.x, middleY, middleZ),
+                                                    currentNode.startingLimit + currentNode.limitIncreaseAmount,
+                                                    currentNode.limitIncreaseAmount,
+                                                    currentNode.depthLimit);
+                }
+                else if (position === BottomRightFront) {
+                    currentNode.children[position] = new OctreeFast(create3dVector(middleX, middleY, currentNode.topLeftFront.position.z),
+                                                    create3dVector(currentNode.bottomRightBack.position.x, currentNode.bottomRightBack.position.y, middleZ),
+                                                    currentNode.startingLimit + currentNode.limitIncreaseAmount,
+                                                    currentNode.limitIncreaseAmount,
+                                                    currentNode.depthLimit);
+                }
+                else if (position === BottomLeftFront) {
+                    currentNode.children[position] = new OctreeFast(create3dVector(currentNode.topLeftFront.position.x, middleY, currentNode.topLeftFront.position.z),
+                                                    create3dVector(middleX, currentNode.bottomRightBack.position.y, middleZ),
+                                                    currentNode.startingLimit + currentNode.limitIncreaseAmount,
+                                                    currentNode.limitIncreaseAmount,
+                                                    currentNode.depthLimit);
+                }
+                else if (position === TopLeftBottom) {
+                    currentNode.children[position] = new OctreeFast(create3dVector(currentNode.topLeftFront.position.x, currentNode.topLeftFront.position.y, middleZ),
+                                                    create3dVector(middleX, middleY, currentNode.bottomRightBack.position.z),
+                                                    currentNode.startingLimit + currentNode.limitIncreaseAmount,
+                                                    currentNode.limitIncreaseAmount,
+                                                    currentNode.depthLimit);
+                }
+                else if (position === TopRightBottom) {
+                    currentNode.children[position] = new OctreeFast(create3dVector(middleX, currentNode.topLeftFront.position.y, middleZ),
+                                                    create3dVector(currentNode.bottomRightBack.position.x, middleY, currentNode.bottomRightBack.position.z),
+                                                    currentNode.startingLimit + currentNode.limitIncreaseAmount,
+                                                    currentNode.limitIncreaseAmount,
+                                                    currentNode.depthLimit);
+                }
+                else if (position === BottomRightBack) {
+                    currentNode.children[position] = new OctreeFast(create3dVector(middleX, middleY, middleZ), currentNode.bottomRightBack,
+                                                        currentNode.startingLimit + currentNode.limitIncreaseAmount,
+                                                        currentNode.limitIncreaseAmount,
+                                                        currentNode.depthLimit);
+                }
+                else if (position === BottomLeftBack) {
+                    currentNode.children[position] = new OctreeFast(create3dVector(currentNode.topLeftFront.position.x, middleY, middleZ),
+                                                    create3dVector(middleX, currentNode.bottomRightBack.position.y, currentNode.bottomRightBack.position.z),
+                                                    currentNode.startingLimit + currentNode.limitIncreaseAmount,
+                                                    currentNode.limitIncreaseAmount,
+                                                    currentNode.depthLimit);
+                }
+
+                currentNode.children[position].depth = currentNode.depth + 1;
+            }
+
+            currentNode = currentNode.children[position];
+        }
+    }
+
     /**
      * 
      * @param {*} vector 

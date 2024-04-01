@@ -132,7 +132,7 @@ function rebuildOctree() {
                         depthLimit);
 
     for (let i = 0; i < flock.length; i++) {
-        octree.insert(flock[i]);
+        octree.insertIterative(flock[i]);
     }
 }
 
@@ -163,7 +163,7 @@ function setup() {
     for (let i = 0; i < flockSize; i++) {
         const boid = new Boid(boundaryX, boundaryY, boundaryZ);
         flock.push(boid);
-        octree.insert(flock[i]);
+        octree.insertIterative(flock[i]);
     }
 }
 
@@ -207,7 +207,7 @@ function draw() {
         }
 
         if (!fastMode) {
-            octree.insert(boid);
+            octree.insertIterative(boid);
         }
     }
 
