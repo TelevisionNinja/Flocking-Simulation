@@ -15,6 +15,7 @@ let octreeStartingValueLimit = 1;
 let showOctree = false;
 let fastMode = true;
 let depthLimit = 4;
+let rebuildCounter = 0;
 
 function firstPersonCamera(cam, speed = 10) {
     // store state
@@ -176,7 +177,10 @@ function draw() {
     previousBoundaryZ = boundaryZ;
     boundaryZ = Number(document.getElementById('depthSlider').value);
 
-    if (fastMode || boundaryZ !== previousBoundaryZ) {
+    // rebuild every 4th frame in fast mode
+    rebuildCounter = (rebuildCounter + 1) % 4;
+
+    if ((fastMode && rebuildCounter === 0) || boundaryZ !== previousBoundaryZ) {
         rebuildOctree();
     }
 
