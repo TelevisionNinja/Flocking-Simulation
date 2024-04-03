@@ -3,7 +3,7 @@ const flockSize = 512;
 
 let cam;
 
-let hasBoundary = false;
+let hasBoundary = true;
 
 let boundaryX = 0;
 let boundaryY = 0;
