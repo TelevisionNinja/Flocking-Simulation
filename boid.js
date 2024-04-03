@@ -146,32 +146,63 @@ class Boid {
      * @param {*} z 
      */
     boundary(x, y, z) {
+        const margin = 256;
+
         if (this.position.x > x) {
             this.position.x = x;
-            this.velocity.x = -this.velocity.x / 2;
         }
         else if (this.position.x < -x) {
             this.position.x = -x;
-            this.velocity.x = -this.velocity.x / 2;
+        }
+
+        if (x - margin > -x + margin) {
+            const nextPosition = this.position.x + this.velocity.x;
+
+            if (nextPosition > x - margin) {
+                this.velocity.x -= (nextPosition - (x - margin)) / margin; // turning factor scales up the closer to the edge it gets
+            }
+            else if (nextPosition < -x + margin) {
+                this.velocity.x += ((-x + margin) - nextPosition) / margin;
+            }
         }
 
         if (this.position.y > y) {
             this.position.y = y;
-            this.velocity.y = -this.velocity.y / 2;
         }
         else if (this.position.y < -y) {
             this.position.y = -y;
-            this.velocity.y = -this.velocity.y / 2;
+        }
+
+        if (y - margin > -y + margin) {
+            const nextPosition = this.position.y + this.velocity.y;
+
+            if (nextPosition > y - margin) {
+                this.velocity.y -= (nextPosition - (y - margin)) / margin;
+            }
+            else if (nextPosition < -y + margin) {
+                this.velocity.y += ((-y + margin) - nextPosition) / margin;
+            }
         }
 
         if (this.position.z > z) {
             this.position.z = z;
-            this.velocity.z = -this.velocity.z / 2;
         }
         else if (this.position.z < -z) {
             this.position.z = -z;
-            this.velocity.z = -this.velocity.z / 2;
         }
+
+        if (z - margin > -z + margin) {
+            const nextPosition = this.position.z + this.velocity.z;
+
+            if (nextPosition > z - margin) {
+                this.velocity.z -= (nextPosition - (z - margin)) / margin;
+            }
+            else if (nextPosition < -z + margin) {
+                this.velocity.z += ((-z + margin) - nextPosition) / margin;
+            }
+        }
+
+        this.velocity = limitMaxMagnitude(this.maxVelocity, this.velocity);
     }
 
     /**
