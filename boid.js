@@ -1,4 +1,4 @@
-function distance(x, y, z) {
+function magnitudeOfVector(x, y, z) {
     return Math.sqrt(x * x + y * y + z * z);
 }
 
@@ -28,7 +28,7 @@ function randomValue(min = 0, max = 0) {
 }
 
 function limitMaxMagnitude(limit, vector) {
-    const d = distance(vector.x, vector.y, vector.z);
+    const d = magnitudeOfVector(vector.x, vector.y, vector.z);
 
     if (limit < d) {
         const proportion = limit / d;
@@ -76,7 +76,7 @@ function division(scalar, vector) {
 }
 
 function setMagnitude(magnitude, vector) {
-    const d = distance(vector.x, vector.y, vector.z);
+    const d = magnitudeOfVector(vector.x, vector.y, vector.z);
     const proportion = magnitude / d;
 
     return {
